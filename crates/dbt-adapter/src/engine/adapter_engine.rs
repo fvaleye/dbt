@@ -499,7 +499,12 @@ pub(crate) fn adbc_execute_with_options(
         // Snowflake DML (MERGE/INSERT/UPDATE/DELETE) returns a one-row metadata batch
         // with columns like "number of rows inserted". AdapterResponse needs that batch
         // to compute rows_affected correctly, so we must drain even when fetch=false.
-        if !fetch && !schema.has_dml_columns(engine.adapter_type()) {
+        // Altertable runs a statement while its Flight SQL results stream, so dropping
+        // the reader early can cancel the statement before it runs.
+        if !fetch
+            && adapter_type != AdapterType::Altertable
+            && !schema.has_dml_columns(engine.adapter_type())
+        {
             drop(reader);
             let schema = attach_lake_compute_metadata(&stmt, schema);
             return Ok((schema, batches, None));

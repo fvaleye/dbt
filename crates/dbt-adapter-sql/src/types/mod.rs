@@ -252,7 +252,7 @@ pub fn default_time_unit(backend: AdapterType) -> TimeUnit {
     match backend {
         Snowflake | Databricks | Spark => Nanosecond,
         Bigquery | Redshift => Microsecond,
-        Postgres | Salesforce | DuckDB | GizmoSQL => Microsecond,
+        Postgres | Salesforce | DuckDB | GizmoSQL | Altertable => Microsecond,
         Fabric => Microsecond,
         ClickHouse => Second,
         // Athena (Presto/Trino-based) uses millisecond precision for timestamps.
@@ -965,9 +965,8 @@ impl SqlType {
                 match backend {
                     Snowflake => write!(out, "OBJECT(")?,
                     Bigquery | Databricks | Spark | Athena => write!(out, "STRUCT<")?,
-                    Postgres | Salesforce | DuckDB | GizmoSQL | ClickHouse | Exasol => {
-                        write!(out, "(")?
-                    }
+                    Postgres | Salesforce | DuckDB | GizmoSQL | Altertable | ClickHouse
+                    | Exasol => write!(out, "(")?,
                     // Redshift doesn't support object/struct types
                     Redshift => write!(out, "(")?,
                     Fabric => unimplemented!("SQL Server does't have a struct type"),
@@ -1008,7 +1007,8 @@ impl SqlType {
                     Bigquery | Databricks | Spark | Athena => {
                         write!(out, ">")
                     }
-                    Postgres | Salesforce | DuckDB | GizmoSQL | ClickHouse | Exasol => {
+                    Postgres | Salesforce | DuckDB | GizmoSQL | Altertable | ClickHouse
+                    | Exasol => {
                         write!(out, ")")
                     }
                     Redshift => write!(out, ")"),
@@ -1446,7 +1446,7 @@ impl SqlType {
             // }}}
 
             // DuckDB {{{
-            (DuckDB | GizmoSQL, Numeric(None) | BigNumeric(None)) => {
+            (DuckDB | GizmoSQL | Altertable, Numeric(None) | BigNumeric(None)) => {
                 // DuckDB's DECIMAL type without precision/scale defaults to DECIMAL(18, 3)
                 // https://duckdb.org/docs/sql/data_types/numeric
                 DataType::Decimal128(18, 3)
@@ -1572,7 +1572,9 @@ impl SqlType {
                     (Redshift, None) => TimeUnit::Microsecond,
                     // TIME's default precision on PostgreSQL is 6 (microseconds)
                     // https://www.postgresql.org/docs/current/datatype-datetime.html
-                    (Postgres | Salesforce | DuckDB | GizmoSQL, None) => TimeUnit::Microsecond,
+                    (Postgres | Salesforce | DuckDB | GizmoSQL | Altertable, None) => {
+                        TimeUnit::Microsecond
+                    }
                     (Fabric, None) => {
                         // In SQL Server, the number enclosed in parenthesis is the fractional second scale, rather than precision.
                         //
@@ -1740,7 +1742,7 @@ impl SqlType {
                                 MonthDayNano,
                             )
                     }
-                    Bigquery | Postgres | DuckDB | GizmoSQL => MonthDayNano, // MonthDayNano is exactly what BQ and PG use internally
+                    Bigquery | Postgres | DuckDB | GizmoSQL | Altertable => MonthDayNano, // MonthDayNano is exactly what BQ and PG use internally
                     // FIXME: ClickHouse doesn't actually seem to support Arrow's Interval
                     ClickHouse => MonthDayNano,
                     Exasol => MonthDayNano,
@@ -1919,7 +1921,10 @@ fn metadata_type_candidate_keys(backend: AdapterType) -> &'static [&'static str]
         AdapterType::Databricks => &DATABRICKS_KEYS,
         AdapterType::Spark => &SPARK_KEYS,
         AdapterType::Redshift => &REDSHIFT_KEYS,
-        AdapterType::DuckDB | AdapterType::LakeCompute | AdapterType::GizmoSQL => &DUCKDB_KEYS,
+        AdapterType::DuckDB
+        | AdapterType::LakeCompute
+        | AdapterType::GizmoSQL
+        | AdapterType::Altertable => &DUCKDB_KEYS,
         AdapterType::Fabric => &SQLSERVER_KEYS,
         AdapterType::ClickHouse => &CLICKHOUSE_KEYS,
         AdapterType::Athena => &ATHENA_KEYS,

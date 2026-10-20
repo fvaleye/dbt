@@ -167,6 +167,7 @@ mod tests {
                 Ok(builder)
             }
             Backend::GizmoSQL => database_builder_for_gizmosql(),
+            Backend::Altertable => database_builder_for_altertable(),
             Backend::Generic { .. } => unimplemented!("generic backend database builder in tests"),
         }?;
         if backend == Backend::Snowflake {
@@ -194,6 +195,19 @@ mod tests {
                 "adbc.flight.sql.client_option.tls_skip_verify",
                 tls_skip_verify,
             )?;
+        Ok(builder)
+    }
+
+    fn database_builder_for_altertable() -> Result<database::Builder> {
+        let mut builder = database::Builder::new(Backend::Altertable);
+        let uri =
+            env::var("ADBC_ALTERTABLE_URI").unwrap_or_else(|_| "grpc://localhost:15002".to_owned());
+        let username = env::var("ADBC_ALTERTABLE_USERNAME").unwrap_or_default();
+        let password = env::var("ADBC_ALTERTABLE_PASSWORD").unwrap_or_default();
+        builder
+            .with_parse_uri(uri)?
+            .with_username(username)
+            .with_password(password);
         Ok(builder)
     }
 
@@ -306,7 +320,8 @@ mod tests {
                 | Backend::Databricks
                 | Backend::DuckDB
                 | Backend::DuckDBExtended
-                | Backend::GizmoSQL => {
+                | Backend::GizmoSQL
+                | Backend::Altertable => {
                     assert_eq!(batch.column(0).as_primitive::<Int32Type>().value(0), 42);
                 }
                 Backend::ClickHouse => {
@@ -904,5 +919,11 @@ mod tests {
     #[test]
     fn statement_execute_gizmosql() -> Result<()> {
         execute_statement(Backend::GizmoSQL)
+    }
+
+    #[test_with::env(ADBC_ALTERTABLE_URI)]
+    #[test]
+    fn statement_execute_altertable() -> Result<()> {
+        execute_statement(Backend::Altertable)
     }
 }

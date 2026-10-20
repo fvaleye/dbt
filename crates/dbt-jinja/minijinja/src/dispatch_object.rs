@@ -362,6 +362,9 @@ pub fn get_adapter_prefixes(dialect: &str) -> Vec<String> {
         // GizmoSQL is a DuckDB-backed server: `gizmosql__` macros override only what
         // differs from DuckDB, and everything else falls through to `duckdb__`.
         "gizmosql" => prefixes.push("duckdb".to_string()),
+        // Altertable is a DuckDB-backed server too: `altertable__` macros override only
+        // what differs from DuckDB.
+        "altertable" => prefixes.push("duckdb".to_string()),
         // Add other adapter hierarchies as needed
         _ => {}
     }
@@ -430,6 +433,7 @@ pub fn get_internal_packages(dialect: &str) -> Vec<String> {
         "lakecompute" => internal_packages.push("dbt_duckdb".to_string()),
         // See `get_adapter_prefixes`: GizmoSQL inherits DuckDB's macro package.
         "gizmosql" => internal_packages.push("dbt_duckdb".to_string()),
+        "altertable" => internal_packages.push("dbt_duckdb".to_string()),
         // Add other adapter hierarchies as needed
         _ => {}
     }

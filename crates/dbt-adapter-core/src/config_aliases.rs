@@ -44,6 +44,8 @@ pub fn config_aliases(adapter_type: AdapterType) -> &'static [(&'static str, &'s
             ("use_tls", "use_encryption"),
             ("disable_certificate_verification", "tls_skip_verify"),
         ],
+        // dbt-altertable 0.2.13, `dbt/adapters/altertable/credentials.py`.
+        AdapterType::Altertable => &[("catalog", "database")],
         // TODO(fs#13424): `_ALIASES` not transcribed for this adapter -- its Python package was
         // not vendored in the local cache used to populate this map.
         AdapterType::Salesforce

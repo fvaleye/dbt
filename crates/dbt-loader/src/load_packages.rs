@@ -322,6 +322,7 @@ pub fn internal_package_names(adapter_type: AdapterType) -> Vec<String> {
         AdapterType::Databricks => packages.push("dbt-spark".to_string()),
         AdapterType::LakeCompute => packages.push("dbt-duckdb".to_string()),
         AdapterType::GizmoSQL => packages.push("dbt-duckdb".to_string()),
+        AdapterType::Altertable => packages.push("dbt-duckdb".to_string()),
         _ => {}
     }
     packages

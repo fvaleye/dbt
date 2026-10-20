@@ -34,7 +34,9 @@ impl ColumnBuilder {
             }
             // Same rendering rules, but tag the column with its own adapter type so
             // downstream `Column` logic and `build_from_parts` agree.
-            GizmoSQL => Self::build_postgres_like(GizmoSQL, field, type_ops),
+            adapter_type @ (GizmoSQL | Altertable) => {
+                Self::build_postgres_like(adapter_type, field, type_ops)
+            }
             Fabric => Ok(Self::build_fabric(field, type_ops)),
             ClickHouse => Self::build_clickhouse(field, type_ops),
             Exasol => Ok(Self::build_exasol(field, type_ops)),
@@ -66,7 +68,7 @@ impl ColumnBuilder {
                 numeric_precision,
                 numeric_scale,
             ),
-            DuckDB | GizmoSQL => Column::new(
+            DuckDB | GizmoSQL | Altertable => Column::new(
                 self.adapter_type,
                 name,
                 dtype,

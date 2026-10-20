@@ -88,6 +88,11 @@ pub enum Backend {
     /// Not distributed via the dbt Labs CDN: loaded from the system library search path
     /// as `adbc_driver_gizmosql`.
     GizmoSQL,
+    /// Altertable driver implementation: the Apache Arrow Flight SQL ADBC driver.
+    ///
+    /// Not distributed via the dbt Labs CDN: loaded from the system library search path
+    /// as `adbc_driver_flightsql`.
+    Altertable,
     /// Generic ADBC driver implementation.
     ///
     /// This variant is fully dynamic and experimental. Features might not work reliably and fail
@@ -121,6 +126,7 @@ impl fmt::Display for Backend {
             Backend::ClickHouse => write!(f, "ClickHouse"),
             Backend::Exasol => write!(f, "Exasol"),
             Backend::GizmoSQL => write!(f, "GizmoSQL"),
+            Backend::Altertable => write!(f, "Altertable"),
             Backend::Generic { library_name, .. } => write!(f, "Generic({library_name})"),
         }
     }
@@ -143,6 +149,7 @@ impl Backend {
             Backend::ClickHouse => Some("adbc_clickhouse"),
             Backend::Exasol => Some("adbc_driver_exasol"),
             Backend::GizmoSQL => Some("adbc_driver_gizmosql"),
+            Backend::Altertable => Some("adbc_driver_flightsql"),
             Backend::Generic { library_name, .. } => Some(library_name),
         }
     }
@@ -153,6 +160,7 @@ impl Backend {
             Backend::DuckDB | Backend::DuckDBExtended => Some(b"duckdb_adbc_init"),
             Backend::LakeCompute => Some(b"AdbcDriverDbtInit"),
             Backend::GizmoSQL => Some(b"AdbcDriverGizmosqlInit"),
+            Backend::Altertable => Some(b"AdbcDriverFlightSQLInit"),
             Backend::Generic {
                 library_name: _,
                 entrypoint,
@@ -428,7 +436,9 @@ impl AdbcDriver {
                 }
             }
             // CDN strategy for non-CDN drivers: just fall back to the system strategy.
-            (CdnCache | SystemThenCdnCache | Remote, Athena | Exasol | GizmoSQL) => System(None),
+            (CdnCache | SystemThenCdnCache | Remote, Athena | Exasol | GizmoSQL | Altertable) => {
+                System(None)
+            }
             // Generic drivers can only be loaded from a file, so fallback to the System strategy.
             (CdnCache | SystemThenCdnCache | Remote, Generic { library_name, .. }) => {
                 System(Some(library_name.to_string()))
@@ -731,6 +741,7 @@ mod tests {
         // try_load_with_builder(Backend::ClickHouse, AdbcVersion::V100)?;
         // try_load_with_builder(Backend::Exasol, AdbcVersion::V100)?;
         // try_load_with_builder(Backend::GizmoSQL, AdbcVersion::V100)?;
+        // try_load_with_builder(Backend::Altertable, AdbcVersion::V100)?;
         Ok(())
     }
 
@@ -748,6 +759,7 @@ mod tests {
         try_load_with_builder(Backend::ClickHouse, AdbcVersion::V110)?;
         // try_load_with_builder(Backend::Exasol, AdbcVersion::V110)?;
         // try_load_with_builder(Backend::GizmoSQL, AdbcVersion::V110)?;
+        // try_load_with_builder(Backend::Altertable, AdbcVersion::V110)?;
         Ok(())
     }
 

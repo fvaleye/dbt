@@ -15,8 +15,8 @@ pub fn dialect_of(adapter_type: AdapterType) -> Option<Dialect> {
         // falls back to Postgresql at the moment
         Salesforce => Dialect::Postgresql,
         // `LakeCompute` defines no dialect of its own, so it falls back to DuckDB's.
-        // GizmoSQL is a DuckDB-backed server, so it speaks DuckDB's dialect too.
-        DuckDB | LakeCompute | GizmoSQL => Dialect::Duckdb,
+        // GizmoSQL and Altertable are DuckDB-backed servers, so they speak DuckDB's dialect too.
+        DuckDB | LakeCompute | GizmoSQL | Altertable => Dialect::Duckdb,
         Trino => Dialect::Trino,
         _ => return None,
     };

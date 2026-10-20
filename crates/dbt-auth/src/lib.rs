@@ -8,6 +8,7 @@ use dbt_adbc::{Backend, database};
 mod config;
 
 // Database-specific auth implementations
+mod altertable;
 mod athena;
 mod bigquery;
 mod clickhouse;
@@ -89,6 +90,7 @@ pub fn auth_for_backend_with_warnings(
         Backend::Athena => Box::new(athena::AthenaAuth::new(warning_printer)),
         Backend::Exasol => Box::new(exasol::ExasolAuth::new(warning_printer)),
         Backend::GizmoSQL => Box::new(gizmosql::GizmoSQLAuth::new(warning_printer)),
+        Backend::Altertable => Box::new(altertable::AltertableAuth::new(warning_printer)),
         Backend::Generic { .. } => unimplemented!("generic backend authentication"),
     }
 }

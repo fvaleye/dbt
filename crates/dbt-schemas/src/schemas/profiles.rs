@@ -56,6 +56,7 @@ pub enum DbConfig {
     // Hive,
     Exasol(Box<ExasolDbConfig>),
     GizmoSQL(Box<GizmoSQLDbConfig>),
+    Altertable(Box<AltertableDbConfig>),
     // Oracle,
     // Synapse,
     Fabric(Box<FabricDbConfig>),
@@ -110,6 +111,7 @@ impl_from_db_config!(DuckDB, DuckDbConfig);
 impl_from_db_config!(Fabric, FabricDbConfig);
 impl_from_db_config!(Exasol, ExasolDbConfig);
 impl_from_db_config!(GizmoSQL, GizmoSQLDbConfig);
+impl_from_db_config!(Altertable, AltertableDbConfig);
 impl_from_db_config!(ClickHouse, ClickHouseDbConfig);
 
 /// Resolves BigQuery's `compute_region` / legacy `dataproc_region` alias in a raw profiles.yml
@@ -166,6 +168,7 @@ impl DbConfig {
             DbConfig::Fabric(config) => config.host.as_deref(),
             DbConfig::Exasol(config) => config.host.as_deref(),
             DbConfig::GizmoSQL(config) => config.host.as_deref(),
+            DbConfig::Altertable(config) => config.host.as_deref(),
             DbConfig::ClickHouse(config) => config.host.as_deref(),
         }
     }
@@ -349,6 +352,7 @@ impl DbConfig {
                 "idle_timeout",
             ],
             AdapterType::GizmoSQL => GIZMOSQL_CONNECTION_KEYS,
+            AdapterType::Altertable => ALTERTABLE_CONNECTION_KEYS,
             AdapterType::ClickHouse => &[
                 "database",
                 "schema",
@@ -412,6 +416,7 @@ impl DbConfig {
             DbConfig::LakeCompute(config) => dbt_yaml::to_value(config),
             DbConfig::Exasol(config) => dbt_yaml::to_value(config),
             DbConfig::GizmoSQL(config) => dbt_yaml::to_value(config),
+            DbConfig::Altertable(config) => dbt_yaml::to_value(config),
             DbConfig::ClickHouse(config) => dbt_yaml::to_value(config),
         }
     }
@@ -431,6 +436,7 @@ impl DbConfig {
             DbConfig::Fabric(..) => AdapterType::Fabric,
             DbConfig::Exasol(..) => AdapterType::Exasol,
             DbConfig::GizmoSQL(..) => AdapterType::GizmoSQL,
+            DbConfig::Altertable(..) => AdapterType::Altertable,
             DbConfig::ClickHouse(..) => AdapterType::ClickHouse,
             DbConfig::LakeCompute(..) => AdapterType::LakeCompute,
         }
@@ -451,6 +457,7 @@ impl DbConfig {
             DbConfig::Fabric(config) => config.database.as_ref(),
             DbConfig::Exasol(config) => config.database.as_ref(),
             DbConfig::GizmoSQL(config) => config.database.as_ref(),
+            DbConfig::Altertable(config) => config.database.as_ref(),
             DbConfig::ClickHouse(config) => config.database.as_ref(),
             DbConfig::LakeCompute(config) => config.database.as_ref(),
         }
@@ -493,6 +500,7 @@ impl DbConfig {
             DbConfig::Fabric(config) => config.schema.as_ref(),
             DbConfig::Exasol(config) => config.schema.as_ref(),
             DbConfig::GizmoSQL(config) => config.schema.as_ref(),
+            DbConfig::Altertable(config) => config.schema.as_ref(),
             DbConfig::ClickHouse(config) => config.schema.as_ref(),
         }
     }
@@ -512,6 +520,7 @@ impl DbConfig {
             DbConfig::Fabric(_) => None,
             DbConfig::Exasol(config) => config.threads.as_ref(),
             DbConfig::GizmoSQL(config) => config.threads.as_ref(),
+            DbConfig::Altertable(config) => config.threads.as_ref(),
             DbConfig::ClickHouse(config) => config.threads.as_ref(),
             DbConfig::LakeCompute(config) => config.threads.as_ref(),
         }
@@ -532,6 +541,7 @@ impl DbConfig {
             DbConfig::Fabric(_) => (),
             DbConfig::Exasol(config) => config.threads = threads,
             DbConfig::GizmoSQL(config) => config.threads = threads,
+            DbConfig::Altertable(config) => config.threads = threads,
             DbConfig::ClickHouse(config) => config.threads = threads,
             DbConfig::LakeCompute(config) => config.threads = threads,
         }
@@ -1466,6 +1476,44 @@ pub struct GizmoSQLDbConfig {
     pub threads: Option<StringOrInteger>,
 }
 
+/// `password` is deliberately absent: these keys reach `dbt debug`'s connection
+/// display, which must not print credentials.
+const ALTERTABLE_CONNECTION_KEYS: &[&str] =
+    &["host", "port", "username", "database", "schema", "tls"];
+
+/// Altertable adapter configuration.
+///
+/// Altertable is a DuckLake lakehouse served over Arrow Flight SQL. Field names
+/// and aliases match the Python `dbt-altertable` adapter's credentials so existing
+/// `profiles.yml` targets work unchanged.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default, DbtSchema, Merge)]
+#[merge(strategy = merge_strategies_extend::overwrite_option)]
+#[serde(rename_all = "snake_case")]
+pub struct AltertableDbConfig {
+    /// Hostname of the Altertable Flight SQL endpoint (defaults to flight.altertable.ai).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub host: Option<String>,
+    /// Arrow Flight SQL port (defaults to 443).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub port: Option<StringOrInteger>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub username: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub password: Option<String>,
+    /// The catalog that relations are built into. The session keeps every catalog
+    /// attached, so sources may live in other catalogs.
+    #[serde(skip_serializing_if = "Option::is_none", alias = "catalog")]
+    pub database: Option<String>,
+    /// Schema name (defaults to "main").
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub schema: Option<String>,
+    /// Connect over TLS (defaults to true).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tls: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub threads: Option<StringOrInteger>,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default, DbtSchema, Merge)]
 #[merge(strategy = merge_strategies_extend::overwrite_option)]
 #[serde(rename_all = "snake_case")]
@@ -1696,6 +1744,7 @@ pub enum TargetContext {
     Fabric(FabricTargetEnv),
     Exasol(ExasolTargetEnv),
     GizmoSQL(GizmoSQLTargetEnv),
+    Altertable(AltertableTargetEnv),
     ClickHouse(ClickHouseTargetEnv),
     // Add other variants as needed
 }
@@ -1892,6 +1941,15 @@ pub struct GizmoSQLTargetEnv {
 
 #[derive(Serialize, DbtSchema)]
 #[serde(rename_all = "snake_case")]
+pub struct AltertableTargetEnv {
+    pub host: Option<String>,
+    pub port: Option<StringOrInteger>,
+    pub username: Option<String>,
+    pub __common__: CommonTargetContext,
+}
+
+#[derive(Serialize, DbtSchema)]
+#[serde(rename_all = "snake_case")]
 pub struct ClickHouseTargetEnv {
     pub driver: Option<String>,
     pub host: Option<String>,
@@ -2040,6 +2098,23 @@ fn gizmosql_target_context(
                 ),
                 None => None,
             },
+        },
+    }))
+}
+
+fn altertable_target_context(
+    config: AltertableDbConfig,
+    adapter_type: String,
+) -> Result<TargetContext, String> {
+    Ok(TargetContext::Altertable(AltertableTargetEnv {
+        host: config.host,
+        port: config.port,
+        username: config.username,
+        __common__: CommonTargetContext {
+            database: config.database.unwrap_or_default(),
+            schema: config.schema.unwrap_or_else(|| "main".to_string()),
+            type_: adapter_type,
+            threads: None,
         },
     }))
 }
@@ -2355,6 +2430,7 @@ impl TryFrom<DbConfig> for TargetContext {
             })),
 
             DbConfig::GizmoSQL(config) => gizmosql_target_context(*config, adapter_type),
+            DbConfig::Altertable(config) => altertable_target_context(*config, adapter_type),
 
             DbConfig::ClickHouse(config) => Ok(TargetContext::ClickHouse(ClickHouseTargetEnv {
                 driver: config.driver.clone(),

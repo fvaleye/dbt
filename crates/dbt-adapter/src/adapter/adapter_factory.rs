@@ -44,6 +44,7 @@ pub fn backend_of(adapter_type: AdapterType) -> Backend {
         AdapterType::ClickHouse => Backend::ClickHouse,
         AdapterType::Exasol => Backend::Exasol,
         AdapterType::GizmoSQL => Backend::GizmoSQL,
+        AdapterType::Altertable => Backend::Altertable,
         AdapterType::Starburst => todo!("Starburst"),
         AdapterType::Athena => Backend::Athena,
         AdapterType::Trino => todo!("Trino"),

@@ -21,9 +21,10 @@ impl CatalogRelation {
             // selection either, so this mirrors the DuckDB arm exactly.
             // GizmoSQL is a remote DuckDB and shares DuckDB's macros, which read
             // `duckdb_write_strategy` off this relation.
-            AdapterType::DuckDB | AdapterType::LakeCompute | AdapterType::GizmoSQL => {
-                Ok(Self::default_catalog_relation_duckdb())
-            }
+            AdapterType::DuckDB
+            | AdapterType::LakeCompute
+            | AdapterType::GizmoSQL
+            | AdapterType::Altertable => Ok(Self::default_catalog_relation_duckdb()),
             _ => Err(AdapterError::new(
                 AdapterErrorKind::Internal,
                 format!("build_relation_catalog cannot be invoked by an adapter {adapter_type:?}"),

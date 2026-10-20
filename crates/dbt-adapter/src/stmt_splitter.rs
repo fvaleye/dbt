@@ -67,7 +67,8 @@ impl StmtSplitter for DefaultStmtSplitter {
             // falls back to Postgresql at the moment
             Salesforce => Dialect::Postgresql,
             // `LakeCompute` defines no dialect of its own, so it falls back to DuckDB's
-            DuckDB | LakeCompute => Dialect::Duckdb,
+            // Altertable is a DuckDB-backed server, so it splits with DuckDB's dialect too.
+            DuckDB | LakeCompute | Altertable => Dialect::Duckdb,
             // ClickHouse string literals use backslash escapes (\', \\, \xNN),
             // which the Trino fallback lexer cannot tokenize — everything from
             // the escape on is then passed through unsplit. The Databricks

@@ -708,7 +708,8 @@ impl Adapter {
                 | AdapterType::Databricks
                 | AdapterType::DuckDB
                 | AdapterType::LakeCompute
-                | AdapterType::GizmoSQL => {
+                | AdapterType::GizmoSQL
+                | AdapterType::Altertable => {
                     format!("({expr1} IS NOT DISTINCT FROM {expr2})")
                 }
                 _ => format!(
@@ -2565,7 +2566,7 @@ impl Adapter {
                     | AdapterType::Datafusion
                     | AdapterType::Dremio
                     | AdapterType::Oracle
-                    | AdapterType::GizmoSQL
+                    | AdapterType::GizmoSQL | AdapterType::Altertable
                     | AdapterType::LakeCompute => Err(AdapterError::new(
                         AdapterErrorKind::NotSupported,
                         format!("has_dbr_capability is only supported by the Databricks adapter. Use the portable adapter.has_feature(\"{}\") instead.", capability_name),
@@ -2596,7 +2597,7 @@ impl Adapter {
                 | AdapterType::Datafusion
                 | AdapterType::Dremio
                 | AdapterType::Oracle
-                | AdapterType::GizmoSQL
+                | AdapterType::GizmoSQL | AdapterType::Altertable
                 | AdapterType::LakeCompute => Ok(Value::from(false)),
             },
         }

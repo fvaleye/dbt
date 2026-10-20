@@ -73,6 +73,8 @@ pub enum AdapterType {
     Exasol,
     /// GizmoSQL: an Arrow Flight SQL server backed by DuckDB. Shares DuckDB's SQL dialect.
     GizmoSQL,
+    /// Altertable: a DuckLake lakehouse served over Arrow Flight SQL. Shares DuckDB's SQL dialect.
+    Altertable,
     /// Athena
     Athena,
     /// Starburst
@@ -139,8 +141,8 @@ pub fn quote_char(adapter_type: AdapterType) -> char {
         ClickHouse => '`',
         // Exasol is PostgreSQL-compatible, so it uses double quotes for identifiers.
         Exasol => '"',
-        // GizmoSQL speaks DuckDB SQL, which uses double quotes for identifiers.
-        GizmoSQL => '"',
+        // GizmoSQL and Altertable speak DuckDB SQL, which uses double quotes for identifiers.
+        GizmoSQL | Altertable => '"',
         Dremio => todo!("Dremio"),
         Oracle => todo!("Oracle"),
     }
@@ -283,6 +285,7 @@ mod tests {
                 (AdapterType::ClickHouse, "clickhouse"),
                 (AdapterType::Exasol, "exasol"),
                 (AdapterType::GizmoSQL, "gizmosql"),
+                (AdapterType::Altertable, "altertable"),
                 (AdapterType::Athena, "athena"),
                 (AdapterType::Starburst, "starburst"),
                 (AdapterType::Trino, "trino"),
@@ -318,6 +321,7 @@ mod tests {
             AdapterType::Datafusion,
             AdapterType::Exasol,
             AdapterType::GizmoSQL,
+            AdapterType::Altertable,
         ] {
             assert_eq!(quote_char(adapter_type), '"', "{adapter_type:?}");
         }

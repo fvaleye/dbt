@@ -34,6 +34,7 @@ fn parse_backend(s: &str) -> Result<Backend> {
         "clickhouse" => Ok(Backend::ClickHouse),
         "exasol" => Ok(Backend::Exasol),
         "gizmosql" => Ok(Backend::GizmoSQL),
+        "altertable" => Ok(Backend::Altertable),
         _ => Err(Error::with_message_and_status(
             format!("Unsupported backend: {s}"),
             Status::InvalidArguments,
